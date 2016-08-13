@@ -1,0 +1,131 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     PCEFusionSetup
+//
+
+global proc setFusionCamera ()
+{
+	string $grabber = "";
+	string $selectedGrabbers[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedGrabbers); $ii++ ) {
+		string $type = `nodeType $selectedGrabbers[$ii]`;
+		if ( $type == "pointCloudGrabber" ) {
+			$grabber = $selectedGrabbers[$ii];
+			break;
+		}
+	}
+
+	if ($grabber == "")
+	{
+		string $nodeNames[] = `lsType( "pointCloudGrabber" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$grabber = $name;
+				break;
+			}
+		}
+	}
+	
+	if ($grabber == "")
+		return;
+
+	print $grabber;
+	
+	string $camera[] =`camera -centerOfInterest 100
+			-focalLength 100
+			-lensSqueezeRatio 1
+			-cameraScale 1
+			-horizontalFilmAperture 1.41732 
+			-horizontalFilmOffset 0 
+			-verticalFilmAperture 0.94488 
+			-verticalFilmOffset 0 
+			-filmFit Fill -overscan 1 
+			-motionBlur 0 
+			-shutterAngle 144 
+			-nearClipPlane 0.1 
+			-farClipPlane 10000 
+			-orthographic 0 
+			-orthographicWidth 30 
+			-panZoomEnabled 0 
+			-horizontalPan 0 
+			-verticalPan 0 
+			-zoom 1`;
+
+	connectAttr ($grabber + ".cameraTranslate") ($camera[0] + ".translate");
+	connectAttr ($grabber + ".cameraRotate") ($camera[0] + ".rotate");
+	connectAttr ($grabber + ".cameraScale") ($camera[0] + ".scale");
+
+	select -r $grabber ;
+}
+
+global proc setFusionMesh ()
+{
+	string $grabber = "";
+	string $selectedGrabbers[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedGrabbers); $ii++ ) {
+		string $type = `nodeType $selectedGrabbers[$ii]`;
+		if ( $type == "pointCloudGrabber" ) {
+			$grabber = $selectedGrabbers[$ii];
+			break;
+		}
+	}
+
+	if ($grabber == "")
+	{
+		string $nodeNames[] = `lsType( "pointCloudGrabber" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$grabber = $name;
+				break;
+			}
+		}
+	}
+	
+	if ($grabber == "")
+		return;
+
+	print $grabber;
+	
+	string $meshs[] = `lsType("mesh")`;
+	string	$newMeshName = "mesh" + size( $meshs );
+	createNode mesh -n $newMeshName;
+	connectAttr ($grabber + ".outputFusionMesh") ($newMeshName + ".inMesh") ;
+
+	select -r $grabber ;
+
+	setFusionCamera();
+}
+
+

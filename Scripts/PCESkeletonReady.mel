@@ -1,0 +1,50 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     PCESkeletonSetup, createHIK
+//
+
+
+global proc prepareSkeleton ()
+{
+	evalDeferred "hikMirrorSkeleton";
+	
+	//evalDeferred "scale 0.1 0.1 0.1 Character1_Reference";
+	evalDeferred "move 0 0 5 Character1_Reference";
+	rotate -os -fo 0 0 -180 Character1_Reference;
+	
+	float $scale = 0.01;
+	eval scale $scale $scale $scale Character1_Reference;
+
+	eval delete Character1_ReferenceShape;
+	eval delete HIKSkeletonGeneratorNode1;
+	eval delete Character1;
+}
+
+// Run pointCloudEditorMenu to add "Point Cloud" to the top level Maya menu list.
+prepareSkeleton;

@@ -1,0 +1,121 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     pointCloudEditorMenu
+//
+source PCEPointCloudSetup;
+source PCEPreviewerSetup;
+source PCESkeletonSetup;
+source PCEFaceTrackingSetup;
+source PCEFusionSetup;
+
+//	Callback routine for the menu item created in pointCloudEditorMenu
+global proc createGrabberDeviceNode ()
+{
+	string $extracts[] = `lsType("pointCloudGrabber")`;
+	if( size( $extracts ) > 1)
+		return;
+
+	// Turn off the grid.
+	grid -toggle false;
+
+	// Set up the camera environment.
+	string $curPanel = `getPanel -withFocus`;
+	string $curModelPanel = $curPanel;
+	if(`getPanel -typeOf $curPanel` != "modelPanel")
+		$curModelPanel = "modelPanel4";
+	string $camera[] =`camera -centerOfInterest 10
+			-focalLength 80
+			-lensSqueezeRatio 1
+			-cameraScale 1
+			-horizontalFilmAperture 1.41732 
+			-horizontalFilmOffset 0 
+			-verticalFilmAperture 0.94488 
+			-verticalFilmOffset 0 
+			-filmFit Fill -overscan 1 
+			-motionBlur 0 
+			-shutterAngle 144 
+			-nearClipPlane 0.1 
+			-farClipPlane 10000 
+			-orthographic 0 
+			-orthographicWidth 30 
+			-panZoomEnabled 0 
+			-horizontalPan 0 
+			-verticalPan 0 
+			-zoom 1`;
+	//setAttr ($camera[0] + ".rotateX") 180;
+	setAttr ($camera[0] + ".translateZ") 1000;
+	lookThroughModelPanel $camera[0] $curModelPanel;
+
+	// Create a circle node dependency object called "pointCloudEditorNode1"
+	createNode pointCloudGrabber -n pointCloudGrabberNode1;
+	connectAttr time1.outTime pointCloudGrabberNode1.time;
+
+	//connectAttr pointCloudGrabberNode1.cameraTranslate ($camera[0] + ".translate");
+	//connectAttr pointCloudGrabberNode1.cameraRotate ($camera[0] + ".rotate");
+	//connectAttr pointCloudGrabberNode1.cameraScale ($camera[0] + ".scale");
+}
+
+global proc pointCloudEditorMenu ()
+{
+
+	// The global string variable gMainWindow contains the name of top
+	// Level Maya window.  Using this as the parent in a menu command
+	// will create a new menu at the same level as "File", "Edit", etc.
+	global string $gMainWindow;
+
+	// Create a top level menu called "Point Cloud".  Its only menu item
+	// is called "Move in circle", and when invoked by the user, it
+	// will call the createSphereAndAttachCircleNode procedure shown above.
+	menu -parent $gMainWindow -tearOff true -label "Point Cloud" pointCloudMenu;
+		menuItem -label "Setup Grabber Device"
+			-command "createGrabberDeviceNode" grabberDeviceItem;
+		menuItem -label "Setup Previewer"
+			-command "setupPreviewer" previewerSetupItem;
+		menuItem -label "Setup Point Cloud Shape"
+			-command "setupPointCloudShape" pointCloudSetupItem;
+		menuItem -label "Setup Skeleton"
+			-command "setupSkeleton" skeletonSetupItem;
+		menuItem -label "Setup Face Tracking"
+			-command "setFaceTracking" faceTrackingSetupItem;
+		menuItem -label "Build Face Avatar Transform"
+			-command "buildFaceAvatarTransform" faceAvatarTransformItem;
+		menuItem -label "Build Face Avatar"
+			-command "buildFaceAvatar" faceAvatarItem;
+		menuItem -label "Setup Fusion Mesh"
+			-command "setFusionMesh" fusionMeshSetupItem;
+		menuItem -label "Extract Point Cloud"
+			-command "pointCloudExtraction" pointCloudExtractionItem;
+		menuItem -label "Point Cloud To Mesh"
+			-command "pointCloudToMesh" pointCloudToMeshItem;
+		menuItem -label "Assign Mesh Texture"
+			-command "assignTexture" pointCloudTextureItem;
+}
+
+// Run pointCloudEditorMenu to add "Point Cloud" to the top level Maya menu list.
+pointCloudEditorMenu;

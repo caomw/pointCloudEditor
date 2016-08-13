@@ -1,0 +1,53 @@
+<!--
+===========================================================================
+Copyright 2012 Autodesk, Inc. All rights reserved.
+
+Use of this software is subject to the terms of the Autodesk license
+agreement provided at the time of installation or download, or which
+otherwise accompanies this software in either electronic or hard copy form.
+===========================================================================
+
+Main fragment for procedural checker plugin texture
+-->
+
+<fragment uiName="pointCloudTextureNodeFragment" name="pointCloudTextureNodeFragment" type="plumbing" class="ShadeFragment" version="1.0">
+	<description><![CDATA[Fragment to perform a ramp lookup]]></description>
+	<properties>
+    <texture2 name="floatMap" />
+    <sampler name="floatMapSampler" />
+		<float2 name="uvCoord" semantic="mayaUvCoordSemantic" flags="varyingInputParam" />
+	</properties>
+	<values>
+	</values>
+	<outputs>
+		<struct name="output" struct_name="pointCloudTextureNodeFragmentOutput" />
+	</outputs>
+	<implementation>
+	<implementation render="OGSRenderer" language="Cg" lang_version="2.1">
+		<function_name val="pointCloudTextureNodeFragment" />
+		<source>
+		<![CDATA[
+pointCloudTextureNodeFragmentOutput pointCloudTextureNodeFragment(Texture2D floatMap, sampler2D floatMapSampler, float2 uv) 
+{ 
+	pointCloudTextureNodeFragmentOutput result;
+	result.outColor = tex2D( floatMapSampler, uv).rgb;
+	return result; 
+}
+		]]>
+		</source>
+	</implementation>
+	<implementation render="OGSRenderer" language="HLSL" lang_version="11.0">
+		<function_name val="pointCloudTextureNodeFragment" />
+		<source>
+		<![CDATA[
+pointCloudTextureNodeFragmentOutput pointCloudTextureNodeFragment(Texture2D floatMap, sampler floatMapSampler, float2 uv) 
+{ 
+	pointCloudTextureNodeFragmentOutput result;
+	result.outColor = floatMap.Sample(floatMapSampler, uv).rgb;
+	return result;
+}
+		]]>
+		</source>
+	</implementation>
+	</implementation>
+</fragment>

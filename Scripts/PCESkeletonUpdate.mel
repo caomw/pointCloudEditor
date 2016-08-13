@@ -1,0 +1,94 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     PCESkeletonUpdate, update the skeleton joints
+//
+
+
+global proc updateSkeleton ()
+{
+	//rotate -os -fo 0 0 180 Character1_Reference;
+
+	float $pos[] = `pointCloudSkeletionInfo -b 1`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_Neck;
+	$pos = `pointCloudSkeletionInfo -b 0`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_Head;
+	$pos = `pointCloudSkeletionInfo -b 8`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_Spine1;
+	
+	$pos = `pointCloudSkeletionInfo -b 6`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_LeftHand;
+	$pos = `pointCloudSkeletionInfo -b 4`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_LeftForeArm;
+	$pos = `pointCloudSkeletionInfo -b 2`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_LeftShoulder;
+	
+	$pos = `pointCloudSkeletionInfo -b 3`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_RightShoulder;
+	$pos = `pointCloudSkeletionInfo -b 5`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_RightForeArm;
+	$pos = `pointCloudSkeletionInfo -b 7`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_RightHand;
+	
+
+	$pos = `pointCloudSkeletionInfo -b 13`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_LeftFoot;
+	$pos = `pointCloudSkeletionInfo -b 14`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_RightFoot;
+	$pos = `pointCloudSkeletionInfo -b 11`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_LeftLeg;
+	$pos = `pointCloudSkeletionInfo -b 12`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_RightLeg;
+	$pos = `pointCloudSkeletionInfo -b 9`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_LeftUpLeg;
+	$pos = `pointCloudSkeletionInfo -b 10`;
+	if($pos[3] >= 0.5)
+		move $pos[0] $pos[1] $pos[2] Character1_RightUpLeg;
+	
+	
+	$pos = `pointCloudSkeletionInfo -b 15`;
+		move  $pos[0] $pos[1] $pos[2] Character1_Hips;
+
+}
+
+// Run pointCloudEditorMenu to add "Point Cloud" to the top level Maya menu list.
+updateSkeleton;

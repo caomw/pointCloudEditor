@@ -1,0 +1,205 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     PCEFaceTrackingSetup
+//
+
+
+global proc setFaceTracking ()
+{
+	string $grabber = "";
+	string $selectedGrabbers[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedGrabbers); $ii++ ) {
+		string $type = `nodeType $selectedGrabbers[$ii]`;
+		if ( $type == "pointCloudGrabber" ) {
+			$grabber = $selectedGrabbers[$ii];
+			break;
+		}
+	}
+
+	if ($grabber == "")
+	{
+		string $nodeNames[] = `lsType( "pointCloudGrabber" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$grabber = $name;
+				break;
+			}
+		}
+	}
+	
+	if ($grabber == "")
+		return;
+
+	print $grabber;
+	
+	createNode faceTrackingDriver -n faceTrackingDriver1;
+	connectAttr ($grabber + ".outputFaceTrackingData") faceTrackingDriver1.inputData ;
+
+	string $meshs[] = `lsType("mesh")`;
+	string	$newMeshName = "mesh" + size( $meshs );
+	createNode mesh -n $newMeshName;
+	connectAttr faceTrackingDriver1.outputMesh ($newMeshName + ".inMesh") ;
+
+	/*string $parent;
+	string $relatives[] = `listRelatives -path -parent $newMeshName`;
+	if( size($relatives) == 1)
+	{
+		$parent = $relatives[0];
+		
+		string $plusMinusAverage = `createNode plusMinusAverage`;
+		connectAttr faceTrackingDriver1.centerTranslate ($plusMinusAverage + ".input3D[0]");
+		connectAttr ($plusMinusAverage + ".output3D")	($parent + ".translate");
+		spaceLocator -p 0 0 0 -n faceLocation;
+		connectAttr faceLocation.translate ($plusMinusAverage + ".input3D[1]");
+	}*/
+	select -r $grabber ;
+}
+
+global proc buildFaceAvatar ()
+{
+	string $blender = "";
+	string $driver = "";
+	string $selected[] = `ls -sl`;
+
+	int $ii;
+	for ( $ii = 0; $ii < size($selected); $ii++ ) {
+		string $type = `nodeType $selected[$ii]`;
+		if ( $type == "faceTrackingDriver" && $driver == "") {
+			$driver = $selected[$ii];
+		}
+		else if($blender == "" && $type == "blendShape")
+		{
+			$blender = $selected[$ii];
+		}
+	}
+
+	if ($driver == "" || $driver == "<done>")
+	{
+		string $nodeNames[] = `lsType( "faceTrackingDriver" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$driver = $name;
+				break;
+			}
+		}
+	}
+	if ($driver == "" || $driver == "<done>")
+		return;
+
+	if ($blender == "" || $blender == "<done>")
+	{
+		string $nodeNames[] = `lsType( "blendShape" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$blender = $name;
+				break;
+			}
+		}
+	}
+	if ($blender == "" || $blender == "<done>")
+		return;
+
+	print $blender;
+	setAttr ($blender + ".supportNegativeWeights") 1;
+	
+	connectAttr ($driver + ".upperLipRaiser") ($blender + ".UpperLipRaiser") ;
+	connectAttr ($driver + ".jawLowerer") ($blender + ".JawLowerer") ;
+	connectAttr ($driver + ".lipStretcher") ($blender + ".LipStretcher") ;
+	connectAttr ($driver + ".browLowerer") ($blender + ".BrowLowerer") ;
+	connectAttr ($driver + ".lipCornerDepressor") ($blender + ".LipCornerDepressor") ;
+	connectAttr ($driver + ".outerBrowRaiser") ($blender + ".OuterBrowRaiser") ;
+}
+
+global proc buildFaceAvatarTransform ()
+{
+	string $avatar = "";
+	string $driver = "";
+	string $selected[] = `ls -sl`;
+
+	int $ii;
+	for ( $ii = 0; $ii < size($selected); $ii++ ) {
+		string $type = `nodeType $selected[$ii]`;
+		if ( $type == "faceTrackingDriver" && $driver == "") {
+			$driver = $selected[$ii];
+		}
+		else if($avatar == "")
+		{
+			$avatar = $selected[$ii];
+		}
+	}
+
+	if ($avatar == "" || $avatar == "<done>")
+		return;
+
+	if ($driver == "" || $driver == "<done>")
+	{
+		string $nodeNames[] = `lsType( "faceTrackingDriver" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$driver = $name;
+				break;
+			}
+		}
+	}
+
+	// getTransform
+	if( "transform" != `nodeType $avatar`)
+	{
+		string $parent;
+		string $relatives[] = `listRelatives -path -parent $avatar`;
+		if( size($relatives) == 1)
+		{
+			$avatar = $relatives[0];
+		}
+	}
+	print $avatar;
+	if( "transform" != `nodeType $avatar`)
+		return;
+	
+	string $plusMinusAverage1 = `createNode plusMinusAverage`;
+	connectAttr ($driver + ".rotate") ($plusMinusAverage1 + ".input3D[0]") ;
+	connectAttr ($plusMinusAverage1 + ".output3D") ($avatar + ".rotate") ;
+
+	string $multiplyDivide1 = `createNode multiplyDivide`;
+	connectAttr ($driver + ".scale") ($multiplyDivide1 + ".input1") ;
+	connectAttr ($multiplyDivide1 + ".output") ($avatar + ".scale") ;
+
+	string $plusMinusAverage2 = `createNode plusMinusAverage`;
+	connectAttr ($driver + ".centerTranslate") ($plusMinusAverage2 + ".input3D[0]") ;
+	connectAttr ($plusMinusAverage2 + ".output3D") ($avatar + ".translate") ;
+}

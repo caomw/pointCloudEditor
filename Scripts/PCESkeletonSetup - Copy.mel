@@ -1,0 +1,141 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     PCESkeletonSetup, createHIK
+//
+
+
+global proc setupSkeleton ()
+{
+	string $grabber = "";
+	string $selectedGrabbers[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedGrabbers); $ii++ ) {
+		string $type = `nodeType $selectedGrabbers[$ii]`;
+		if ( $type == "pointCloudGrabber" ) {
+			$grabber = $selectedGrabbers[$ii];
+			break;
+		}
+	}
+	
+	if ($grabber == "")
+		return;
+
+	print $grabber;
+	
+	createNode skeletonDriver -n skeletonDriver1;
+	connectAttr ($grabber + ".outputSkeletonData") skeletonDriver1.inputData ;
+
+	// build a body skeleton
+	source ChaSkeletonsMenu;
+	select -d;
+	joint -p 0 0 0 -n "center";
+	retargetingLimbLabel "Root";
+	joint -p 0 0 0 -n "spine";
+	retargetingLimbLabel "Spine";
+	joint -p 0 0 0 -n "neck";
+	retargetingLimbLabel "Neck";
+	joint -p 0 0 0 -n "head";
+	retargetingLimbLabel "Head";
+	select -d;
+	joint -p 0 0 0 -n "leftHip";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Hip";
+	joint -p 0 0 0 -n "leftKnee";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Knee";
+	joint -p 0 0 0 -n "leftFoot";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Foot";
+	select -d;
+	joint -p 0 0 0 -n "leftShoulder";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Shoulder";
+	joint -p 0 0 0 -n "leftElbow";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Elbow";
+	joint -p 0 0 0 -n "leftHand";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Hand";
+	select -d;
+	joint -p 0 0 0 -n "rightHip";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Hip";
+	joint -p 0 0 0 -n "rightKnee";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Knee";
+	joint -p 0 0 0 -n "rightFoot";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Foot";
+	select -d;
+	joint -p 0 0 0 -n "rightShoulder";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Shoulder";
+	joint -p 0 0 0 -n "rightElbow";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Elbow";
+	joint -p 0 0 0 -n "rightHand";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Hand";
+
+	// Parents
+	select -d;
+	parent "leftHip" "center";
+	parent "rightHip" "center";
+	parent "leftShoulder" "neck";
+	parent "rightShoulder" "neck";
+
+	// Show labels
+	select -r "center" ;
+	displayJointLabels 4;
+
+	// Connect the driver to the skeleton
+	connectAttr skeletonDriver1.centerMassTranslate ("center" + ".translate");
+	connectAttr skeletonDriver1.torsoTranslate ("spine" + ".translate");
+	connectAttr skeletonDriver1.neckTranslate ("neck" + ".translate");
+	connectAttr skeletonDriver1.headTranslate ("head" + ".translate");
+
+	connectAttr skeletonDriver1.leftHipTranslate ("leftHip" + ".translate");
+	connectAttr skeletonDriver1.leftKneeTranslate ("leftKnee" + ".translate");
+	connectAttr skeletonDriver1.leftFootTranslate ("leftFoot" + ".translate");
+
+	connectAttr skeletonDriver1.rightHipTranslate ("rightHip" + ".translate");
+	connectAttr skeletonDriver1.rightKneeTranslate ("rightKnee" + ".translate");
+	connectAttr skeletonDriver1.rightFootTranslate ("rightFoot" + ".translate");
+
+	connectAttr skeletonDriver1.leftShoulderTranslate ("leftShoulder" + ".translate");
+	connectAttr skeletonDriver1.leftElbowTranslate ("leftElbow" + ".translate");
+	connectAttr skeletonDriver1.leftHandTranslate ("leftHand" + ".translate");
+
+	connectAttr skeletonDriver1.rightShoulderTranslate ("rightShoulder" + ".translate");
+	connectAttr skeletonDriver1.rightElbowTranslate ("rightElbow" + ".translate");
+	connectAttr skeletonDriver1.rightHandTranslate ("rightHand" + ".translate");
+}
+
+// Run pointCloudEditorMenu to add "Point Cloud" to the top level Maya menu list.
+setupSkeleton;

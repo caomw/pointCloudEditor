@@ -1,0 +1,31 @@
+<!--
+===========================================================================
+Copyright 2012 Autodesk, Inc. All rights reserved.
+
+Use of this software is subject to the terms of the Autodesk license
+agreement provided at the time of installation or download, or which
+otherwise accompanies this software in either electronic or hard copy form.
+===========================================================================
+
+Total fragment graph for procedural checker plugin texture
+-->
+
+<fragment_graph name="pointCloudTextureNodeGraph" ref="pointCloudTextureNodeGraph" class="FragmentGraph" version="1.0">
+	<fragments>
+		<fragment_ref name="pointCloudTextureNodeFragment" ref="pointCloudTextureNodeFragment" />
+		<fragment_ref name="pointCloudTextureNodeFragmentOutput" ref="pointCloudTextureNodeFragmentOutput" />
+	</fragments>
+	<connections>
+		<connect from="pointCloudTextureNodeFragment.output" to="pointCloudTextureNodeFragmentOutput.pointCloudTextureNodeFragmentOutput" />
+	</connections>
+	<properties>
+    <texture2 name="floatMap" ref="pointCloudTextureNodeFragment.floatMap" />
+    <sampler name="floatMapSampler" ref="pointCloudTextureNodeFragment.floatMapSampler" />
+		<float2 name="uvCoord" ref="pointCloudTextureNodeFragment.uvCoord" semantic="mayaUvCoordSemantic" flags="varyingInputParam" />
+	</properties>
+	<values>
+	</values>
+	<outputs>
+		<struct name="output" ref="pointCloudTextureNodeFragmentOutput.pointCloudTextureNodeFragmentOutput" />
+	</outputs>
+</fragment_graph>

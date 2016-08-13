@@ -1,0 +1,181 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     createPointCloudEditorNode
+//
+
+//	Callback routine for the menu item created in pointCloudEditorMenu
+global proc setupPointCloudShape ()
+{
+	string $grabber = "";
+	string $selectedGrabbers[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedGrabbers); $ii++ ) {
+		string $type = `nodeType $selectedGrabbers[$ii]`;
+		if ( $type == "pointCloudGrabber" ) {
+			$grabber = $selectedGrabbers[$ii];
+			break;
+		}
+	}
+
+	if ($grabber == "")
+	{
+		string $nodeNames[] = `lsType( "pointCloudGrabber" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$grabber = $name;
+				break;
+			}
+		}
+	}
+	
+	if ($grabber == "")
+		return;
+
+	print $grabber;
+
+	createNode pointCloudShape -n pointCloudShape1;
+	connectAttr ($grabber + ".outputCloudData") pointCloudShape1.inputCloudData ;
+}
+
+global proc pointCloudExtraction ()
+{
+	string $sl = "";
+	string $selectedShapes[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedShapes); $ii++ ) {
+		if ( `nodeType $selectedShapes[$ii]` == "pointCloudShape" ) {
+			$sl = $selectedShapes[$ii];
+		}
+		else if ( `nodeType $selectedShapes[$ii]` == "transform" ) {
+			string $chillins[] = `listRelatives -c -s -f $selectedShapes[$ii]`;
+			string $chillin;
+			for ($chillin in $chillins) {
+				string $type = `nodeType $chillin`;
+				if ($type == "pointCloudShape") {
+					$sl = $selectedShapes[$ii];
+				}
+			}
+		}
+	}
+	
+	if ($sl == "")
+		return;
+
+	print $sl;
+
+	string $extracts[] = `lsType("pointCloudExtraction")`;
+	string	$newExtractName = "extract" + size( $extracts );
+
+	createNode pointCloudExtraction -n $newExtractName;
+	connectAttr ($sl + ".outputCloudData") ($newExtractName + ".inputCloudData");
+
+	string	$newShapeName = $selectedShapes[0] + "extracted";
+	createNode pointCloudShape -n $newShapeName;
+	connectAttr ($newExtractName + ".outputCloudData") ($newShapeName + ".inputCloudData");
+
+	setAttr ($sl + ".visibility") 0;
+	select -r $newShapeName ;
+
+	//evalDeferred " disconnectAttr ($newExtractName + \".outputCloudData") ($newShapeName + \".inputCloudData") ";
+}
+
+global proc pointCloudToMesh ()
+{
+	string $sl = "";
+	string $selectedShapes[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedShapes); $ii++ ) {
+		string $type = `nodeType $selectedShapes[$ii]`;
+		if ( $type == "pointCloudShape" || $type == "pointCloudExtraction" ) {
+			$sl = $selectedShapes[$ii];
+		}
+		else if ( `nodeType $selectedShapes[$ii]` == "transform" ) {
+			string $chillins[] = `listRelatives -c -s -f $selectedShapes[$ii]`;
+			string $chillin;
+			for ($chillin in $chillins) {
+				string $type = `nodeType $chillin`;
+				if ($type == "pointCloudShape" || $type == "pointCloudExtraction" ) {
+					$sl = $selectedShapes[$ii];
+				}
+			}
+		}
+	}
+	
+	if ($sl == "")
+		return;
+
+	print $sl;
+
+	string $toMeshs[] = `lsType("pointCloudToMesh")`;
+	string	$newToMeshName = "pointCloudToMesh" + size( $toMeshs );
+
+	string $meshs[] = `lsType("mesh")`;
+	string	$newMeshName = "mesh" + size( $meshs );
+
+	createNode pointCloudToMesh -n $newToMeshName;
+	createNode mesh -n $newMeshName;
+	
+	connectAttr ($sl + ".outputCloudData") ($newToMeshName + ".inputCloudData");
+	connectAttr ($newToMeshName + ".outputMesh") ($newMeshName + ".inMesh");
+}
+
+global proc assignTexture ()
+{
+	string $sl = "";
+	string $selectedShapes[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedShapes); $ii++ ) {
+		string $type = `nodeType $selectedShapes[0]`;
+		if ( $type == "mesh" ) {
+			$sl = $selectedShapes[$ii];
+		}
+		else if ( `nodeType $selectedShapes[$ii]` == "transform" ) {
+			string $chillins[] = `listRelatives -c -s -f $selectedShapes[$ii]`;
+			string $chillin;
+			for ($chillin in $chillins) {
+				string $type = `nodeType $chillin`;
+				if ($type == "mesh" ) {
+					$sl = $selectedShapes[$ii];
+				}
+			}
+		}
+	}
+	print $sl;
+
+	sets -e -forceElement initialShadingGroup;
+
+	string $textureShaders[] = `lsType("pointCloudToMesh")`;
+	string $textureShaderName = "pointCloudTextureShader" + size( $textureShaders );
+
+	createNode pointCloudTextureNode -n $textureShaderName;
+	connectAttr pointCloudGrabberNode1.outputCloudData ($textureShaderName + ".inputCloudData");
+	connectAttr ($textureShaderName + ".outColor") lambert1.color;
+}

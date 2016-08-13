@@ -1,0 +1,206 @@
+//-
+// ==========================================================================
+// Copyright 1995,2006,2008 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk
+// license agreement provided at the time of installation or download,
+// or which otherwise accompanies this software in either electronic
+// or hard copy form.
+// ==========================================================================
+//+
+
+//
+//  Autodesk Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:   30 September 1996
+//  Author:          Tingzhu Zhou
+//
+//  Description:
+//     This script creates a new top level Maya menu that contains a
+//	   single item "Move in Circle".  When selected, it will create
+//     a sphere and a dependency node that moves this in a circle,
+//     and connect these 2 together.
+//
+//     When the play button on the time slider is pressed, the sphere
+//     will move in a cirle around the Y axis.
+//
+//  Procedures:
+//     PCESkeletonSetup, createHIK
+//
+
+global proc setupSkeleton ()
+{
+	string $grabber = "";
+	string $selectedGrabbers[] = `ls -sl`;
+	int $ii;
+	for ( $ii = 0; $ii < size($selectedGrabbers); $ii++ ) {
+		string $type = `nodeType $selectedGrabbers[$ii]`;
+		if ( $type == "pointCloudGrabber" ) {
+			$grabber = $selectedGrabbers[$ii];
+			break;
+		}
+	}
+
+	if ($grabber == "")
+	{
+		string $nodeNames[] = `lsType( "pointCloudGrabber" )`;
+		string  $name;
+		for ( $name in $nodeNames )
+		{
+			if ( $name != "<done>" ){
+				$grabber = $name;
+				break;
+			}
+		}
+	}
+	
+	if ($grabber == "")
+		return;
+
+	print $grabber;
+	
+	createNode skeletonDriver -n skeletonDriver1;
+	connectAttr ($grabber + ".outputSkeletonData") skeletonDriver1.inputData ;
+
+	// build a body skeleton
+	source ChaSkeletonsMenu;
+	select -d;
+	joint -p 0 0 0 -n "center";
+	retargetingLimbLabel "Root";
+	joint -p 0 0 0 -n "spine";
+	retargetingLimbLabel "Spine";
+	joint -p 0 0 0 -n "neck";
+	retargetingLimbLabel "Neck";
+	joint -p 0 0 0 -n "head";
+	retargetingLimbLabel "Head";
+	select -d;
+	joint -p 0 0 0 -n "leftHip";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Hip";
+	joint -p 0 0 0 -n "leftKnee";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Knee";
+	joint -p 0 0 0 -n "leftFoot";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Foot";
+	select -d;
+	joint -p 0 0 0 -n "leftShoulder";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Shoulder";
+	joint -p 0 0 0 -n "leftElbow";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Elbow";
+	joint -p 0 0 0 -n "leftHand";
+	retargetingSideLabel "Left";
+	retargetingLimbLabel "Hand";
+	select -d;
+	joint -p 0 0 0 -n "rightHip";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Hip";
+	joint -p 0 0 0 -n "rightKnee";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Knee";
+	joint -p 0 0 0 -n "rightFoot";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Foot";
+	select -d;
+	joint -p 0 0 0 -n "rightShoulder";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Shoulder";
+	joint -p 0 0 0 -n "rightElbow";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Elbow";
+	joint -p 0 0 0 -n "rightHand";
+	retargetingSideLabel "Right";
+	retargetingLimbLabel "Hand";
+
+	// Parents
+	select -d;
+	parent "leftHip" "center";
+	parent "rightHip" "center";
+	parent "leftShoulder" "neck";
+	parent "rightShoulder" "neck";
+
+	// Show labels
+	select -r "center" ;
+	displayJointLabels 4;
+
+	
+	// Connect the driver to the skeleton
+	string $plusMinusAverage = `createNode plusMinusAverage`;
+	connectAttr skeletonDriver1.centerMassTranslate ($plusMinusAverage + ".input3D[0]");
+	connectAttr ($plusMinusAverage + ".output3D")	("center" + ".translate");
+	/*spaceLocator -p 0 0 0 -n skeletonLocation;
+	setAttr "skeletonLocation.visibility" 0;
+	connectAttr skeletonLocation.translate ($plusMinusAverage + ".input3D[1]");*/
+	connectAttr skeletonDriver1.centerMassValid ("center" + ".visibility");
+
+	connectAttr skeletonDriver1.torsoTranslateX ("spine" + ".translateX");
+	connectAttr skeletonDriver1.torsoTranslateY ("spine" + ".translateY");
+	connectAttr skeletonDriver1.torsoTranslateZ ("spine" + ".translateZ");
+	connectAttr skeletonDriver1.torsoValid ("spine" + ".visibility");
+	connectAttr skeletonDriver1.neckTranslateX ("neck" + ".translateX");
+	connectAttr skeletonDriver1.neckTranslateY ("neck" + ".translateY");
+	connectAttr skeletonDriver1.neckTranslateZ ("neck" + ".translateZ");
+	connectAttr skeletonDriver1.neckValid ("neck" + ".visibility");
+	connectAttr skeletonDriver1.headTranslateX ("head" + ".translateX");
+	connectAttr skeletonDriver1.headTranslateY ("head" + ".translateY");
+	connectAttr skeletonDriver1.headTranslateZ ("head" + ".translateZ");
+	connectAttr skeletonDriver1.headValid ("head" + ".visibility");
+
+	connectAttr skeletonDriver1.leftHipTranslateX ("leftHip" + ".translateX");
+	connectAttr skeletonDriver1.leftHipTranslateY ("leftHip" + ".translateY");
+	connectAttr skeletonDriver1.leftHipTranslateZ ("leftHip" + ".translateZ");
+	connectAttr skeletonDriver1.leftHipValid ("leftHip" + ".visibility");
+	connectAttr skeletonDriver1.leftKneeTranslateX ("leftKnee" + ".translateX");
+	connectAttr skeletonDriver1.leftKneeTranslateY ("leftKnee" + ".translateY");
+	connectAttr skeletonDriver1.leftKneeTranslateZ ("leftKnee" + ".translateZ");
+	connectAttr skeletonDriver1.leftKneeValid ("leftKnee" + ".visibility");
+	connectAttr skeletonDriver1.leftFootTranslateX ("leftFoot" + ".translateX");
+	connectAttr skeletonDriver1.leftFootTranslateY ("leftFoot" + ".translateY");
+	connectAttr skeletonDriver1.leftFootTranslateZ ("leftFoot" + ".translateZ");
+	connectAttr skeletonDriver1.leftFootValid ("leftFoot" + ".visibility");
+
+	connectAttr skeletonDriver1.rightHipTranslateX ("rightHip" + ".translateX");
+	connectAttr skeletonDriver1.rightHipTranslateY ("rightHip" + ".translateY");
+	connectAttr skeletonDriver1.rightHipTranslateZ ("rightHip" + ".translateZ");
+	connectAttr skeletonDriver1.rightHipValid ("rightHip" + ".visibility");
+	connectAttr skeletonDriver1.rightKneeTranslateX ("rightKnee" + ".translateX");
+	connectAttr skeletonDriver1.rightKneeTranslateY ("rightKnee" + ".translateY");
+	connectAttr skeletonDriver1.rightKneeTranslateZ ("rightKnee" + ".translateZ");
+	connectAttr skeletonDriver1.rightKneeValid ("rightKnee" + ".visibility");
+	connectAttr skeletonDriver1.rightFootTranslateX ("rightFoot" + ".translateX");
+	connectAttr skeletonDriver1.rightFootTranslateY ("rightFoot" + ".translateY");
+	connectAttr skeletonDriver1.rightFootTranslateZ ("rightFoot" + ".translateZ");
+	connectAttr skeletonDriver1.rightFootValid ("rightFoot" + ".visibility");
+
+	connectAttr skeletonDriver1.leftShoulderTranslateX ("leftShoulder" + ".translateX");
+	connectAttr skeletonDriver1.leftShoulderTranslateY ("leftShoulder" + ".translateY");
+	connectAttr skeletonDriver1.leftShoulderTranslateZ ("leftShoulder" + ".translateZ");
+	connectAttr skeletonDriver1.leftShoulderValid ("leftShoulder" + ".visibility");
+	connectAttr skeletonDriver1.leftElbowTranslateX ("leftElbow" + ".translateX");
+	connectAttr skeletonDriver1.leftElbowTranslateY ("leftElbow" + ".translateY");
+	connectAttr skeletonDriver1.leftElbowTranslateZ ("leftElbow" + ".translateZ");
+	connectAttr skeletonDriver1.leftElbowValid ("leftElbow" + ".visibility");
+	connectAttr skeletonDriver1.leftHandTranslateX ("leftHand" + ".translateX");
+	connectAttr skeletonDriver1.leftHandTranslateY ("leftHand" + ".translateY");
+	connectAttr skeletonDriver1.leftHandTranslateZ ("leftHand" + ".translateZ");
+	connectAttr skeletonDriver1.leftHandValid ("leftHand" + ".visibility");
+
+	connectAttr skeletonDriver1.rightShoulderTranslateX ("rightShoulder" + ".translateX");
+	connectAttr skeletonDriver1.rightShoulderTranslateY ("rightShoulder" + ".translateY");
+	connectAttr skeletonDriver1.rightShoulderTranslateZ ("rightShoulder" + ".translateZ");
+	connectAttr skeletonDriver1.rightShoulderValid ("rightShoulder" + ".visibility");
+	connectAttr skeletonDriver1.rightElbowTranslateX ("rightElbow" + ".translateX");
+	connectAttr skeletonDriver1.rightElbowTranslateY ("rightElbow" + ".translateY");
+	connectAttr skeletonDriver1.rightElbowTranslateZ ("rightElbow" + ".translateZ");
+	connectAttr skeletonDriver1.rightElbowValid ("rightElbow" + ".visibility");
+	connectAttr skeletonDriver1.rightHandTranslateX ("rightHand" + ".translateX");
+	connectAttr skeletonDriver1.rightHandTranslateY ("rightHand" + ".translateY");
+	connectAttr skeletonDriver1.rightHandTranslateZ ("rightHand" + ".translateZ");
+	connectAttr skeletonDriver1.rightHandValid ("rightHand" + ".visibility");
+
+	select -r $grabber ;
+}
+
